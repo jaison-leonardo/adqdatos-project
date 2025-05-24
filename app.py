@@ -1,76 +1,88 @@
-from flask import Flask, request, jsonify
-from dash import Dash, html, dcc
+from flask import Flask, request, jsonify, render_template
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
 import plotly.graph_objs as go
+from flask_cors import CORS
 import datetime
 
-# Configuracion Flask + Dash
-server = Flask(__name__)
-app = Dash(__name__, server=server, url_base_pathname='/')
-
-# Simulacion de datos recibidos
+# Simulación en memoria
 sensor_data = {
-    "soil": [],
-    "temp": [],
-    "humidity": [],
+    "humedad_suelo": [],
+    "temperatura": [],
+    "humedad_ambiente": [],
     "timestamps": []
 }
 
-# Layout del dashboard
+# Flask app
+server = Flask(__name__)
+CORS(server)
+
+# Dash app integrada a Flask
+app = Dash(__name__, server=server, url_base_pathname='/dashboard/')
+
+# Layout de Dash
 app.layout = html.Div([
-    html.H1("🌱 Sistema IoT de Riego Inteligente"),
-
-    dcc.Graph(id='temp-chart'),
-    dcc.Graph(id='humidity-chart'),
-    dcc.Graph(id='soil-chart'),
-
-    dcc.Interval(id='update-interval', interval=3000, n_intervals=0)
+    html.H1("Dashboard de Sensores IOT"),
+    dcc.Graph(id='graph-temp'),
+    dcc.Graph(id='graph-humedad'),
+    dcc.Interval(
+        id='interval-component',
+        interval=5*1000,  # cada 5 segundos
+        n_intervals=0
+    )
 ])
 
-# Callbacks para actualizar gráficos
-def create_graph(data, name, ytitle):
-    return {
-        'data': [go.Scatter(x=sensor_data['timestamps'], y=data, mode='lines+markers', name=name)],
-        'layout': go.Layout(title=name, yaxis={'title': ytitle})
-    }
-
+# Callback para actualizar gráficas
 @app.callback(
-    dash.dependencies.Output('temp-chart', 'figure'),
-    [dash.dependencies.Input('update-interval', 'n_intervals')]
+    Output('graph-temp', 'figure'),
+    Output('graph-humedad', 'figure'),
+    Input('interval-component', 'n_intervals')
 )
-def update_temp(n):
-    return create_graph(sensor_data['temp'], "Temperatura (°C)", "°C")
+def update_graphs(n):
+    timestamps = sensor_data['timestamps']
+    temperatura = sensor_data['temperatura']
+    humedad_ambiente = sensor_data['humedad_ambiente']
+    humedad_suelo = sensor_data['humedad_suelo']
 
-@app.callback(
-    dash.dependencies.Output('humidity-chart', 'figure'),
-    [dash.dependencies.Input('update-interval', 'n_intervals')]
-)
-def update_humidity(n):
-    return create_graph(sensor_data['humidity'], "Humedad Ambiente (%)", "%")
+    fig_temp = go.Figure()
+    fig_temp.add_trace(go.Scatter(x=timestamps, y=temperatura, mode='lines+markers', name='Temperatura °C'))
+    fig_temp.update_layout(title='Temperatura', xaxis_title='Tiempo', yaxis_title='°C')
 
-@app.callback(
-    dash.dependencies.Output('soil-chart', 'figure'),
-    [dash.dependencies.Input('update-interval', 'n_intervals')]
-)
-def update_soil(n):
-    return create_graph(sensor_data['soil'], "Humedad del Suelo", "ADC")
+    fig_humedad = go.Figure()
+    fig_humedad.add_trace(go.Scatter(x=timestamps, y=humedad_ambiente, mode='lines+markers', name='Humedad Ambiente %'))
+    fig_humedad.add_trace(go.Scatter(x=timestamps, y=humedad_suelo, mode='lines+markers', name='Humedad Suelo %'))
+    fig_humedad.update_layout(title='Humedades', xaxis_title='Tiempo', yaxis_title='%')
 
-# Endpoint para recibir datos desde ESP32
+    return fig_temp, fig_humedad
+
+# Ruta API para recibir datos desde ESP32
 @server.route('/api/sensores', methods=['POST'])
 def recibir_datos():
-    data = request.json
-    ts = datetime.datetime.now().strftime('%H:%M:%S')
+    data = request.get_json()
 
-    sensor_data['temp'].append(data.get('temp', 0))
-    sensor_data['humidity'].append(data.get('humidity', 0))
-    sensor_data['soil'].append(data.get('soil', 0))
-    sensor_data['timestamps'].append(ts)
+    temperatura = data.get('temperatura')
+    humedad_ambiente = data.get('humedad_ambiente')
+    humedad_suelo = data.get('humedad_suelo')
 
-    # Limitar a 50 puntos
+    now = datetime.datetime.now().strftime("%H:%M:%S")
+
+    sensor_data['temperatura'].append(temperatura)
+    sensor_data['humedad_ambiente'].append(humedad_ambiente)
+    sensor_data['humedad_suelo'].append(humedad_suelo)
+    sensor_data['timestamps'].append(now)
+
+    # Limitar tamaño de historial
+    max_len = 50
     for key in sensor_data:
-        if len(sensor_data[key]) > 50:
-            sensor_data[key] = sensor_data[key][-50:]
+        if len(sensor_data[key]) > max_len:
+            sensor_data[key].pop(0)
 
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "OK"})
+
+# Ruta de inicio
+@server.route('/')
+def home():
+    return "Sistema IOT de Monitoreo y Riego Inteligente - Ir a /dashboard para ver el panel"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    server.run(debug=True, host='0.0.0.0', port=5000)
