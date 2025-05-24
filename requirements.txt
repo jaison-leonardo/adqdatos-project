@@ -3,3 +3,5 @@ dash
 flask-cors
 gunicorn
 plotly
+requests
+setuptools
