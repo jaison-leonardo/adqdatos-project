@@ -59,7 +59,7 @@ def update_graphs(n):
 @server.route('/api/sensores', methods=['POST'])
 def recibir_datos():
     data = request.get_json()
-
+    print("Datos recibidos:", data)
     temperatura = data.get('temperatura')
     humedad_ambiente = data.get('humedad_ambiente')
     humedad_suelo = data.get('humedad_suelo')
@@ -86,5 +86,3 @@ def home():
 
 if __name__ == '__main__':
     server.run(debug=True, host='0.0.0.0', port=5000)
-
-application = server
