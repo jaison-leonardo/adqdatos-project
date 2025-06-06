@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Proyecto IoT</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">
+</head>
+<body>
+    <!-- Partículas animadas -->
+    <div class="particles" id="particles"></div>
+
+    <div class="container login-container">
+        <div class="form-container glass-strong">
+            <!-- Logo pequeño -->
+            <div class="text-center mb-30">
+                <div class="logo logo-small glass" style="margin: 0 auto;">
+                    <div class="logo-icon">⚡</div>
+                </div>
+            </div>
+
+            <!-- Título del formulario -->
+            <h2 class="title-medium text-center mb-20">Acceso al Sistema</h2>
+            <p class="text-center mb-30" style="color: #b0b0b0;">
+                Ingresa tus credenciales para acceder al dashboard IoT
+            </p>
+
+            <!-- Formulario de login -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        placeholder="Ingresa tu usuario"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Ingresa tu contraseña"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="remember" name="remember" style="accent-color: #00d4ff;">
+                        <span>Recordar sesión</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                    Iniciar Sesión
+                </button>
+
+                <div class="text-center">
+                    <a href="#" style="color: #00d4ff; text-decoration: none; font-size: 0.9rem;">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+            </form>
+
+            <!-- Indicadores de conexión -->
+            <div class="status-indicators mt-30">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span>Servidor Conectado</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span>SSL Seguro</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de regreso -->
+    <div style="position: fixed; top: 20px; left: 20px; z-index: 100;">
+        <a href="{{url_for('index')}}" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;">
+            ← Volver
+        </a>
+    </div>
+    <script>
+        const DASHBOARD_URL = "{{ url_for('dashboard') }}";
+    </script>
+    <script src="{{url_for('static', filename='js/login.js')}}"></script>
+</body>
+</html>

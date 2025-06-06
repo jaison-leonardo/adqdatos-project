@@ -1,0 +1,12 @@
+{
+  "umbrales": {
+    "humedad_min": 35,
+    "humedad_max": 75,
+    "temperatura_min": 5,
+    "temperatura_max": 45,
+    "intervalo_riego": 15
+  },
+  "otros_parametros": {
+    "modo_automatico": false
+  }
+}

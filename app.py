@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify, render_template
-from dash import Dash, dcc, html
-from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 from flask_cors import CORS
 import datetime
+import json
+from datetime import datetime, timedelta, timezone
 
 # Simulación en memoria
 sensor_data = {
@@ -13,47 +13,140 @@ sensor_data = {
     "timestamps": []
 }
 
+dispositivos_activos = {} 
+riego_manual = set()  # Guarda los device_id que deben activar riego manual
+
 # Flask app
 server = Flask(__name__)
 CORS(server)
 
-# Dash app integrada a Flask
-app = Dash(__name__, server=server, url_base_pathname='/dashboard/')
+@server.route('/')
+def index():
+    return render_template('welcome.html')
 
-# Layout de Dash
-app.layout = html.Div([
-    html.H1("Dashboard de Sensores IOT"),
-    dcc.Graph(id='graph-temp'),
-    dcc.Graph(id='graph-humedad'),
-    dcc.Interval(
-        id='interval-component',
-        interval=5*1000,  # cada 5 segundos
-        n_intervals=0
-    )
-])
+@server.route('/login')
+def login():
+    return render_template('login.html')
 
-# Callback para actualizar gráficas
-@app.callback(
-    Output('graph-temp', 'figure'),
-    Output('graph-humedad', 'figure'),
-    Input('interval-component', 'n_intervals')
-)
-def update_graphs(n):
-    timestamps = sensor_data['timestamps']
-    temperatura = sensor_data['temperatura']
-    humedad_ambiente = sensor_data['humedad_ambiente']
-    humedad_suelo = sensor_data['humedad_suelo']
+@server.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
 
-    fig_temp = go.Figure()
-    fig_temp.add_trace(go.Scatter(x=timestamps, y=temperatura, mode='lines+markers', name='Temperatura °C'))
-    fig_temp.update_layout(title='Temperatura', xaxis_title='Tiempo', yaxis_title='°C')
+@server.route('/dispositivos')
+def dispositivos():
+    return render_template('devices.html')
 
-    fig_humedad = go.Figure()
-    fig_humedad.add_trace(go.Scatter(x=timestamps, y=humedad_ambiente, mode='lines+markers', name='Humedad Ambiente %'))
-    fig_humedad.add_trace(go.Scatter(x=timestamps, y=humedad_suelo, mode='lines+markers', name='Humedad Suelo %'))
-    fig_humedad.update_layout(title='Humedades', xaxis_title='Tiempo', yaxis_title='%')
+@server.route('/configuracion')
+def configuracion():
+    return render_template('config.html')
 
-    return fig_temp, fig_humedad
+@server.route('/api/riego_manual', methods=['POST'])
+def activar_riego_manual():
+    data = request.get_json()
+    device_id = data.get('device_id')
+    if device_id:
+        riego_manual.add(device_id)
+        return jsonify({"status": "ok"}), 200
+    return jsonify({"status": "error", "message": "No device_id"}), 400
+
+@server.route('/api/riego_manual', methods=['GET'])
+def consultar_riego_manual():
+    device_id = request.args.get('device_id')
+    if device_id and device_id in riego_manual:
+        riego_manual.remove(device_id)  # Solo una vez
+        return jsonify({"riego": True})
+    return jsonify({"riego": False})
+
+# Guardar o actualizar umbrales
+@server.route('/api/umbrales', methods=['POST', 'PUT'])
+def actualizar_umbrales():
+    try:
+        data = request.get_json()
+        
+        # Validaciones básicas
+        if 'umbrales' in data:
+            umbrales = data['umbrales']
+            if umbrales.get('humedad_min', 0) >= umbrales.get('humedad_max', 100):
+                return jsonify({"status": "error", "message": "Humedad mínima debe ser menor que máxima"}), 400
+            if umbrales.get('temperatura_min', 0) >= umbrales.get('temperatura_max', 50):
+                return jsonify({"status": "error", "message": "Temperatura mínima debe ser menor que máxima"}), 400
+        
+        # Leer configuración actual o crear nueva si no existe
+        try:
+            with open("parametros.json", 'r') as file:
+                parametros = json.load(file)
+        except FileNotFoundError:
+            parametros = {}
+        
+        # Actualizar con los nuevos datos
+        if 'umbrales' in data:
+            parametros['umbrales'] = data['umbrales']
+        if 'otros_parametros' in data:
+            parametros['otros_parametros'] = data['otros_parametros']
+        
+        # Guardar
+        with open("parametros.json", 'w') as file:
+            json.dump(parametros, file, indent=2)
+        
+        return jsonify({"status": "OK", "message": "Configuración actualizada exitosamente"}), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Obtener umbrales
+@server.route('/api/umbrales', methods=['GET'])
+def obtener_umbrales():
+    try:
+        with open("parametros.json", 'r') as file:
+            parametros = json.load(file)
+        return jsonify(parametros)
+    except FileNotFoundError:
+        parametros_default = {
+            "umbrales": {
+                "humedad_min": 30,
+                "humedad_max": 80,
+                "temperatura_min": 15,
+                "temperatura_max": 35,
+                "intervalo_riego": 10
+            },
+            "otros_parametros": {
+                "modo_automatico": True
+            }
+        }
+        with open("parametros.json", 'w') as file:
+            json.dump(parametros_default, file)
+        return jsonify(parametros_default)
+
+@server.route('/api/ping', methods=['POST'])
+def ping_dispositivo():
+    data = request.get_json()
+    device_id = data.get('device_id')
+    if device_id:
+        dispositivos_activos[device_id] = {
+            "last_ping": datetime.now(timezone.utc),
+            "device_name": data.get('device_name'),
+            "firmware": data.get('firmware'),
+            "rssi": data.get('rssi'),
+            "uptime": data.get('uptime')
+        }
+        return jsonify({"status": "ok"}), 200
+    return jsonify({"status": "error", "message": "No device_id"}), 400
+
+@server.route('/api/dispositivos_activos', methods=['GET'])
+def obtener_dispositivos_activos():
+    ahora = datetime.now(timezone.utc)
+    activos = []
+    for device_id, info in dispositivos_activos.items():
+        if ahora - info["last_ping"] < timedelta(minutes=10):
+            activos.append({
+                "device_id": device_id,
+                "device_name": info.get("device_name"),
+                "firmware": info.get("firmware"),
+                "rssi": info.get("rssi"),
+                "uptime": info.get("uptime"),
+                "last_ping": info.get("last_ping").isoformat()
+            })
+    return jsonify({"activos": activos})
 
 # Ruta API para recibir datos desde ESP32
 @server.route('/api/sensores', methods=['POST'])

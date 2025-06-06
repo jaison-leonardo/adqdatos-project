@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración IoT - Parámetros del Sistema</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">
+</head>
+<body>
+    <!-- Partículas animadas -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Barra de navegación -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="#" class="nav-brand">
+                <div class="logo">⚡</div>
+                <span>Dashboard IoT</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+                <li><a href="{{ url_for('dispositivos') }}" class="nav-link">Dispositivos</a></li>
+                <li><a href="{{ url_for('configuracion') }}" class="nav-link active">Configuración</a></li>
+                <li><a href="{{ url_for('index') }}" class="nav-link">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Encabezado -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(45deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Configuración del Sistema
+            </h1>
+            <p style="color: rgba(255, 255, 255, 0.7);">
+                Ajusta los parámetros y umbrales de tus sensores IoT
+            </p>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+
+        <!-- Configuración de Umbrales -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">⚙️ Umbrales de Sensores</div>
+                <div class="card-subtitle">Configura los valores límite para activar alertas y acciones automáticas</div>
+            </div>
+
+            <div class="info-box">
+                <h4>📊 Información Importante</h4>
+                <p>
+                    Los umbrales determinan cuándo se activan las alertas y el riego automático. 
+                    Asegúrate de configurar valores apropiados para tu tipo de plantas y ambiente.
+                </p>
+            </div>
+
+            <form id="configForm">
+                <div class="form-grid">
+                    <!-- Humedad del Suelo -->
+                    <div class="form-group">
+                        <label class="form-label">💧 Humedad Mínima del Suelo (%)</label>
+                        <input type="number" id="humedad_min" class="form-input" min="0" max="100" placeholder="Ej: 30">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                            Se activará el riego cuando la humedad esté por debajo de este valor
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">💧 Humedad Máxima del Suelo (%)</label>
+                        <input type="number" id="humedad_max" class="form-input" min="0" max="100" placeholder="Ej: 80">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                            Se detendrá el riego cuando se alcance este nivel
+                        </small>
+                    </div>
+
+                    <!-- Temperatura -->
+                    <div class="form-group">
+                        <label class="form-label">🌡️ Temperatura Mínima (°C)</label>
+                        <input type="number" id="temperatura_min" class="form-input" min="-10" max="50" placeholder="Ej: 15">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                            Alerta de temperatura baja
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🌡️ Temperatura Máxima (°C)</label>
+                        <input type="number" id="temperatura_max" class="form-input" min="-10" max="50" placeholder="Ej: 35">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                            Alerta de temperatura alta
+                        </small>
+                    </div>
+
+                    <!-- Intervalo de Riego -->
+                    <div class="form-group">
+                        <label class="form-label">⏱️ Intervalo de Riego (minutos)</label>
+                        <input type="number" id="intervalo_riego" class="form-input" min="1" max="1440" placeholder="Ej: 10">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                            Tiempo mínimo entre riegos automáticos
+                        </small>
+                    </div>
+
+                    <!-- Modo Automático -->
+                    <div class="form-group">
+                        <label class="form-label">🤖 Modo Automático</label>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+                            <label class="switch">
+                                <input type="checkbox" id="modo_automatico">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="color: rgba(255,255,255,0.8);">
+                                Activar riego automático basado en sensores
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Guardar Configuración
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="loadConfig()">
+                        🔄 Recargar
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetToDefaults()">
+                        ⚡ Valores por Defecto
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Estado del Sistema -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📊 Estado Actual del Sistema</div>
+                <div class="card-subtitle">Información en tiempo real de la configuración activa</div>
+            </div>
+
+            <div class="form-grid">
+                <div style="background: rgba(0,212,255,0.05); padding: 1rem; border-radius: 8px; border: 1px solid rgba(0,212,255,0.2);">
+                    <h4 style="color: #00d4ff; margin-bottom: 0.5rem;">💧 Riego Automático</h4>
+                    <p id="statusRiego" style="color: rgba(255,255,255,0.8);">Cargando...</p>
+                </div>
+
+                <div style="background: rgba(0,255,136,0.05); padding: 1rem; border-radius: 8px; border: 1px solid rgba(0,255,136,0.2);">
+                    <h4 style="color: #00ff88; margin-bottom: 0.5rem;">🌡️ Monitoreo Temperatura</h4>
+                    <p id="statusTemp" style="color: rgba(255,255,255,0.8);">Cargando...</p>
+                </div>
+
+                <div style="background: rgba(255,170,0,0.05); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,170,0,0.2);">
+                    <h4 style="color: #ffaa00; margin-bottom: 0.5rem;">💦 Control de Humedad</h4>
+                    <p id="statusHumedad" style="color: rgba(255,255,255,0.8);">Cargando...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración Avanzada -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🔧 Configuración Avanzada</div>
+                <div class="card-subtitle">Parámetros adicionales del sistema</div>
+            </div>
+
+            <div class="info-box">
+                <h4>⚠️ Zona de Configuración Avanzada</h4>
+                <p>
+                    Estos ajustes pueden afectar el funcionamiento del sistema. 
+                    Solo modifica estos valores si sabes lo que estás haciendo.
+                </p>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">📡 Intervalo de Lectura de Sensores (segundos)</label>
+                    <input type="number" id="intervalo_lectura" class="form-input" min="5" max="300" value="30">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">⏰ Timeout de Conexión (segundos)</label>
+                    <input type="number" id="timeout_conexion" class="form-input" min="5" max="60" value="10">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📊 Máximo de Registros Históricos</label>
+                    <input type="number" id="max_registros" class="form-input" min="50" max="1000" value="100">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{url_for('static', filename='js/config.js')}}"></script>
+</body>
+</html>

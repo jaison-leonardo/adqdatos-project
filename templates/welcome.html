@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido - Proyecto IoT</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">
+</head>
+<body>
+    <!-- Partículas animadas -->
+    <div class="particles" id="particles"></div>
+
+    <div class="container welcome-container">
+        <!-- Logo IoT -->
+        <div class="logo-container">
+            <div class="logo glass">
+                <div class="logo-icon">⚡</div>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <h1 class="title">Bienvenido al Futuro</h1>
+        <p class="subtitle">
+            Explora el mundo conectado del Internet de las Cosas. 
+            Donde la tecnología se encuentra con la innovación para crear soluciones inteligentes.
+        </p>
+
+        <!-- Botón de acción -->
+        <a href="{{url_for('login')}}" class="btn btn-primary">
+            Comenzar Experiencia
+        </a>
+
+        <!-- Indicadores de estado -->
+        <div class="status-indicators mt-30">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>Sistema Activo</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>Conectado</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>En Línea</span>
+            </div>
+        </div>
+    </div>
+    <script src="{{url_for('static', filename='js/particles.js')}}"></script>
+</body>
+</html>

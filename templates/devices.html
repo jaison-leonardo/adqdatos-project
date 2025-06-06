@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispositivos IoT - Gestión de Equipos</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">    
+</head>
+<body>
+    <!-- Partículas animadas -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Barra de navegación -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="#" class="nav-brand">
+                <div class="logo">⚡</div>
+                <span>Dashboard IoT</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+                <li><a href="{{ url_for('dispositivos') }}" class="nav-link active">Dispositivos</a></li>
+                <li><a href="{{ url_for('configuracion') }}" class="nav-link">Configuración</a></li>
+                <li><a href="{{ url_for('index') }}" class="nav-link">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Encabezado -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(45deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Gestión de Dispositivos
+            </h1>
+            <p style="color: rgba(255, 255, 255, 0.7);">
+                Monitorea y controla todos tus dispositivos ESP32 conectados
+            </p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDevices">0</div>
+                <div class="stat-label">Total Dispositivos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="onlineDevices">0</div>
+                <div class="stat-label">En Línea</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="offlineDevices">0</div>
+                <div class="stat-label">Desconectados</div>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+
+        <!-- Tabla de dispositivos -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Dispositivos Conectados</div>
+                <div class="card-subtitle">Lista de todos los dispositivos ESP32 registrados</div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="devices-table">
+                    <thead>
+                        <tr>
+                            <th>Dispositivo</th>
+                            <th>ID</th>
+                            <th>Estado</th>
+                            <th>Firmware</th>
+                            <th>Señal (RSSI)</th>
+                            <th>Tiempo Activo</th>
+                            <th>Última Conexión</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devicesTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+                                <div class="loading"></div>
+                                Cargando dispositivos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="{{url_for('static', filename='js/devices.js')}}"></script>
+</body>
+</html>
