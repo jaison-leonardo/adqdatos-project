@@ -121,9 +121,9 @@ async function loadDevices() {
         const tableBody = document.getElementById('devicesTableBody');
         
         // Actualizar estadísticas
-        document.getElementById('totalDevices').textContent = devices.length;
-        document.getElementById('onlineDevices').textContent = devices.length;
-        document.getElementById('offlineDevices').textContent = '0';
+        document.getElementById('totalDevices').textContent = data.total || 0;
+        document.getElementById('onlineDevices').textContent = data.activos.length || 0;
+        document.getElementById('offlineDevices').textContent = data.offline.length || 0;
         
         if (devices.length === 0) {
             tableBody.innerHTML = `

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard IoT - Panel de Control</title>
     <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}">
-    <!-- Plotly.js para gráficas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
 </head>
 <body>
@@ -16,13 +15,11 @@
     <nav class="navbar">
         <div class="nav-content">
             <a href="#" class="nav-brand">
-                <div class="logo logo-small glass">
-                    <div class="logo-icon">⚡</div>
-                </div>
+                <div class="logo">⚡</div>
                 <span>Dashboard IoT</span>
             </a>
             <ul class="nav-links">
-                <li><a href="{{ url_for('dashboard') }}" class="nav-link active">Dashboard</a></li>
+                 <li><a href="{{ url_for('dashboard') }}" class="nav-link active">Dashboard</a></li>
                 <li><a href="{{ url_for('dispositivos') }}" class="nav-link">Dispositivos</a></li>
                 <li><a href="{{ url_for('configuracion') }}" class="nav-link">Configuración</a></li>
                 <li><a href="{{ url_for('index') }}" class="nav-link">Cerrar Sesión</a></li>
@@ -30,43 +27,33 @@
         </div>
     </nav>
 
-    <div class="container dashboard-container">
+    <div class="container">
         <!-- Encabezado del dashboard -->
-        <div class="text-center mb-30">
-            <h1 class="title-small">Panel de Control IoT</h1>
-            <p class="subtitle" style="margin-bottom: 20px;">
-                Monitoreo en tiempo real de tus dispositivos conectados
-            </p>
+        <div class="text-center dashboard-section">
+            <h1 class="section-title">Panel de Control IoT</h1>
+            <p class="section-subtitle">Monitoreo en tiempo real de los dispositivos conectados</p>
         </div>
 
         <!-- Indicadores principales -->
-        <div class="grid grid-4 mb-30">
+        <div class="grid grid-4 dashboard-section">
             <div class="card text-center">
-                <div class="card-title" style="font-size: 2rem; margin-bottom: 10px;">24</div>
-                <div class="card-subtitle">Dispositivos Activos</div>
+                <div class="metric-value" id="activeDevices">0</div>
+                <div class="metric-label">Dispositivos Activos</div>
                 <div class="status-dot" style="margin: 10px auto 0;"></div>
             </div>
             <div class="card text-center">
-                <div class="card-title" style="font-size: 2rem; margin-bottom: 10px;">98.5%</div>
-                <div class="card-subtitle">Tiempo de Actividad</div>
-                <div class="status-dot" style="margin: 10px auto 0;"></div>
-            </div>
-            <div class="card text-center">
-                <div class="card-title" style="font-size: 2rem; margin-bottom: 10px;">1.2GB</div>
-                <div class="card-subtitle">Datos Procesados</div>
-                <div class="status-dot warning" style="margin: 10px auto 0;"></div>
-            </div>
-            <div class="card text-center">
-                <div class="card-title" style="font-size: 2rem; margin-bottom: 10px;">5ms</div>
-                <div class="card-subtitle">Latencia Promedio</div>
+                <div class="metric-value" id="uptime">0%</div>
+                <div class="metric-label">Tiempo de Actividad</div>
                 <div class="status-dot" style="margin: 10px auto 0;"></div>
             </div>
         </div>
 
-        <!-- Gráficas principales -->
-        <div class="grid grid-2 mb-30">
-            <!-- Gráfica de temperatura -->
-            <div class="card">
+        <!-- Gráficas de series temporales -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Monitoreo en Tiempo Real</h2>
+            
+            <!-- Temperatura -->
+            <div class="card" style="margin-bottom: 1.5rem;">
                 <div class="card-header">
                     <div class="card-title">Temperatura en Tiempo Real</div>
                     <div class="card-subtitle">Sensores IoT - Últimas 24 horas</div>
@@ -74,85 +61,64 @@
                 <div id="temperatureChart" style="height: 400px;"></div>
             </div>
 
-            <!-- Gráfica de humedad -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Niveles de Humedad</div>
-                    <div class="card-subtitle">Promedio por zona</div>
-                </div>
-                <div id="humidityChart" style="height: 400px;"></div>
-            </div>
-        </div>
-
-        <!-- Gráficas secundarias -->
-        <div class="grid grid-3 mb-30">
-            <!-- Consumo energético -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Consumo Energético</div>
-                    <div class="card-subtitle">kWh por día</div>
-                </div>
-                <div id="energyChart" style="height: 300px;"></div>
-            </div>
-
-            <!-- Estado de dispositivos -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Estado de Dispositivos</div>
-                    <div class="card-subtitle">Distribución actual</div>
-                </div>
-                <div id="deviceStatusChart" style="height: 300px;"></div>
-            </div>
-
-            <!-- Tráfico de red -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Tráfico de Red</div>
-                    <div class="card-subtitle">MB/s en tiempo real</div>
-                </div>
-                <div id="networkChart" style="height: 300px;"></div>
-            </div>
-        </div>
-
-        <!-- Dispositivos recientes -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Actividad Reciente de Dispositivos</div>
-                <div class="card-subtitle">Últimas conexiones y desconexiones</div>
-            </div>
             <div class="grid grid-2">
-                <div>
-                    <h4 style="color: #00d4ff; margin-bottom: 15px;">Dispositivos Conectados</h4>
-                    <div class="device-list" id="connectedDevices">
-                        <!-- Dispositivos conectados se cargarán aquí -->
+                <!-- Humedad del ambiente -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Humedad Relativa del Ambiente</div>
+                        <div class="card-subtitle">Porcentaje por dispositivo</div>
                     </div>
+                    <div id="ambientHumidityChart" style="height: 350px;"></div>
                 </div>
-                <div>
-                    <h4 style="color: #ffaa00; margin-bottom: 15px;">Alertas y Notificaciones</h4>
-                    <div class="alerts-list" id="alertsList">
-                        <!-- Alertas se cargarán aquí -->
+
+                <!-- Humedad del suelo -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Humedad del Suelo</div>
+                        <div class="card-subtitle">Porcentaje por sensor</div>
                     </div>
+                    <div id="soilHumidityChart" style="height: 350px;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Indicadores de estado del sistema -->
-        <div class="status-indicators mt-30">
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <span>Sistema Operativo</span>
+        <!-- Selector de dispositivo y tacómetros -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Monitoreo Individual por Dispositivo</h2>
+            
+            <div class="device-selector text-center">
+                <select id="deviceSelector">
+                    <option value="">Seleccionar dispositivo...</option>
+                </select>
             </div>
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <span>Base de Datos</span>
-            </div>
-            <div class="status-item">
-                <div class="status-dot warning"></div>
-                <span>Servidor de Archivos</span>
-            </div>
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <span>API Gateway</span>
+
+            <div class="grid grid-3" id="tachometersContainer">
+                <!-- Tacómetro Humedad Ambiente -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Humedad Ambiente</div>
+                        <div class="card-subtitle">Porcentaje actual</div>
+                    </div>
+                    <div id="ambientHumidityGauge" style="height: 300px;"></div>
+                </div>
+
+                <!-- Tacómetro Temperatura -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Temperatura</div>
+                        <div class="card-subtitle">Grados Celsius</div>
+                    </div>
+                    <div id="temperatureGauge" style="height: 300px;"></div>
+                </div>
+
+                <!-- Tacómetro Humedad Suelo -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Humedad del Suelo</div>
+                        <div class="card-subtitle">Porcentaje actual</div>
+                    </div>
+                    <div id="soilHumidityGauge" style="height: 300px;"></div>
+                </div>
             </div>
         </div>
     </div>

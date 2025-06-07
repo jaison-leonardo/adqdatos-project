@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import plotly.graph_objs as go
+import os
 from flask_cors import CORS
 import datetime
 import json
@@ -13,12 +14,24 @@ sensor_data = {
     "timestamps": []
 }
 
-dispositivos_activos = {} 
+dispositivos_activos = {}
+historial_dispositivos = {}
+HISTORIAL_FILE = "dispositivos.json"
 riego_manual = set()  # Guarda los device_id que deben activar riego manual
 
 # Flask app
 server = Flask(__name__)
 CORS(server)
+
+def cargar_todos_los_dispositivos():
+    if os.path.exists(HISTORIAL_FILE):
+        with open(HISTORIAL_FILE, "r") as f:
+            return set(json.load(f))
+    return set()
+
+def guardar_todos_los_dispositivos(device_ids):
+    with open(HISTORIAL_FILE, "w") as f:
+        json.dump(list(device_ids), f)
 
 @server.route('/')
 def index():
@@ -40,6 +53,43 @@ def dispositivos():
 def configuracion():
     return render_template('config.html')
 
+@server.route('/api/sensor_data', methods=['GET'])
+def obtener_datos_dispositivos():
+    return jsonify(historial_dispositivos)
+
+@server.route('/api/sensores', methods=['POST'])
+def recibir_datos():
+    data = request.get_json()
+    device_id = data.get('device_id', 'unknown')
+    temperatura = data.get('temperatura')
+    humedad_ambiente = data.get('humedad_ambiente')
+    humedad_suelo = data.get('humedad_suelo')
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Inicializa historial si no existe
+    if device_id not in historial_dispositivos:
+        historial_dispositivos[device_id] = {
+            "timestamps": [],
+            "temperature": [],
+            "ambientHumidity": [],
+            "soilHumidity": []
+        }
+
+    # Agrega los datos
+    historial = historial_dispositivos[device_id]
+    historial["timestamps"].append(now)
+    historial["temperature"].append(temperatura)
+    historial["ambientHumidity"].append(humedad_ambiente)
+    historial["soilHumidity"].append(humedad_suelo)
+
+    # Limita el historial a los últimos 50 datos
+    max_len = 50
+    for key in historial:
+        if len(historial[key]) > max_len:
+            historial[key].pop(0)
+
+    return jsonify({"status": "OK"})
+
 @server.route('/api/riego_manual', methods=['POST'])
 def activar_riego_manual():
     data = request.get_json()
@@ -53,7 +103,7 @@ def activar_riego_manual():
 def consultar_riego_manual():
     device_id = request.args.get('device_id')
     if device_id and device_id in riego_manual:
-        riego_manual.remove(device_id)  # Solo una vez
+        riego_manual.remove(device_id)
         return jsonify({"riego": True})
     return jsonify({"riego": False})
 
@@ -124,11 +174,15 @@ def ping_dispositivo():
     if device_id:
         dispositivos_activos[device_id] = {
             "last_ping": datetime.now(timezone.utc),
-            "device_name": data.get('device_name'),
-            "firmware": data.get('firmware'),
-            "rssi": data.get('rssi'),
-            "uptime": data.get('uptime')
+            "device_name": data.get("device_name"),
+            "firmware": data.get("firmware"),
+            "rssi": data.get("rssi"),
+            "uptime": data.get("uptime")
         }
+        # Actualizar archivo de dispositivos conocidos
+        conocidos = cargar_todos_los_dispositivos()
+        conocidos.add(device_id)
+        guardar_todos_los_dispositivos(conocidos)
         return jsonify({"status": "ok"}), 200
     return jsonify({"status": "error", "message": "No device_id"}), 400
 
@@ -146,31 +200,15 @@ def obtener_dispositivos_activos():
                 "uptime": info.get("uptime"),
                 "last_ping": info.get("last_ping").isoformat()
             })
-    return jsonify({"activos": activos})
-
-# Ruta API para recibir datos desde ESP32
-@server.route('/api/sensores', methods=['POST'])
-def recibir_datos():
-    data = request.get_json()
-    print("Datos recibidos:", data)
-    temperatura = data.get('temperatura')
-    humedad_ambiente = data.get('humedad_ambiente')
-    humedad_suelo = data.get('humedad_suelo')
-
-    now = datetime.datetime.now().strftime("%H:%M:%S")
-
-    sensor_data['temperatura'].append(temperatura)
-    sensor_data['humedad_ambiente'].append(humedad_ambiente)
-    sensor_data['humedad_suelo'].append(humedad_suelo)
-    sensor_data['timestamps'].append(now)
-
-    # Limitar tamaño de historial
-    max_len = 50
-    for key in sensor_data:
-        if len(sensor_data[key]) > max_len:
-            sensor_data[key].pop(0)
-
-    return jsonify({"status": "OK"})
+    # Cargar todos los dispositivos conocidos
+    todos = cargar_todos_los_dispositivos()
+    online_ids = set(d["device_id"] for d in activos)
+    offline = list(todos - online_ids)
+    return jsonify({
+        "activos": activos,
+        "offline": offline,
+        "total": len(todos)
+    })
 
 # Ruta de inicio
 @server.route('/')
