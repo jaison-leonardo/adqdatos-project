@@ -284,6 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
     createParticles();
     fetchDataFromFlask();
     
-    // Actualizar datos cada 30 segundos
-    setInterval(fetchDataFromFlask, 30000);
+    // Actualizar datos cada 10 segundos
+    setInterval(fetchDataFromFlask, 10000);
 });
